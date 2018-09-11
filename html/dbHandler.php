@@ -138,13 +138,7 @@ class DBHandler
 
     function __destruct()
     {
-        $allTables = array();
-//          böse I
-//               v
-//        while($result = $this->db->query('SHOW TABLES')->fetch()) {
-//            array_push($allTables,$result);
-//        }
-        print_r($allTables);
+
         $this->db = null;
     }
 }
