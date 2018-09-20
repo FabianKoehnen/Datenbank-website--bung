@@ -108,22 +108,19 @@ class DBHandler
 
         $sql = "CREATE TABLE " . $this->buildName($name) . " (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,$queryString)";
 
-        if (!$this->db->query($sql) == true) {
-            echo "Bitte erneut versuchen";
-        }
-        $allTable = $this->db->query('SHOW TABLES');
 
-        while ($result = $allTable->fetch()) {
-            echo $result[0] . '<br />';
+        if (!$this->db->query($sql) == true) {
+            print_r($sql);
+            print_r($this->db->errorInfo());
         }
+
     }
 
     private function buildName($name)
     {
         $pointlessName = str_replace('.', '_', $name);
-        $timestamp = time() + 7200;
-        $datum = date("d_m_y_H_i_s", $timestamp);
-        return "$pointlessName$datum";
+        $datum = date("j_n_Y_H_i_s", $this->getTime());
+        return "$pointlessName"."$"."$datum";
     }
 
     function createCsvDownloadfile()
@@ -135,9 +132,75 @@ class DBHandler
     {
 
     }
+    function getTableNameArray($tables){
+        $returnTables=array();
+        foreach ($tables as $item){
+            $timestamp=explode('$',$item[0]);
+            array_push($returnTables,$timestamp);
+        }
+        return $returnTables;
+    }
+    function selectOldTables($tables){
+        $oldTables=array();
+        $explodetablenames = $this->getTableNameArray($tables);
+        $timestamp = $this->getTime();
 
+        $currentdatum = getdate($this->getTime());
+
+        foreach ($explodetablenames as $item){
+            $explodeTimestemp=explode('_',$item[1]);
+            if($explodeTimestemp[3]<=$currentdatum["year"]){
+                array_push($oldTables,$item);
+            }else{
+                if($explodeTimestemp[2]<=$currentdatum["month"]){
+                    array_push($oldTables,$item);
+                }else{
+                    if($explodeTimestemp[1]<=$currentdatum["mday"]){
+                        array_push($oldTables,$item);
+                    }else{
+                        if($explodeTimestemp[4]<=$currentdatum["hours"]){
+                            array_push($oldTables,$item);
+                        }else{
+                            if($explodeTimestemp[5]<=$currentdatum["minutes"]){
+                                array_push($oldTables,$item);
+                            }else{
+                                if($explodeTimestemp[6]<=$currentdatum["seconds"]){
+                                    array_push($oldTables,$item);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $oldTables;
+
+    }
+    function deleteOldTables(){
+
+    }
+    function getTime(){
+        $timestamp = time() + 7200;
+
+        return $timestamp;
+    }
     function __destruct()
     {
+        $sql = "SHOW TABLES";
+
+
+        $statement = $this->db->prepare($sql);
+
+
+        $statement->execute();
+
+
+        $tablesnames = $statement->fetchAll(PDO::FETCH_NUM);
+
+        $oldTables=$this->selectOldTables($tablesnames);
+
+
 
         $this->db = null;
     }
